@@ -1,12 +1,5 @@
-version: '3'
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  server:
+    build: .
     ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-    environment:
-      - NODE_ENV=development
+      - 5000:5000
