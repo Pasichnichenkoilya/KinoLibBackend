@@ -1,12 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
 @Injectable()
 export class ParseService {
     async fetchContent(url: string = 'https://uaserial.club/'): Promise<string> {
-        const response = await axios.get(url)
-        return response.data
+        try {
+            const response = await axios.get(url)
+            return response.data
+        } catch (error) {
+            throw new NotFoundException(`resource ${url} is unavailable`)
+        }
     }
 
     parseTabs(html: string): string {
@@ -19,11 +23,11 @@ export class ParseService {
     }
 
     parseMovies(html: string): string {
-        const movies = []
         const $ = cheerio.load(html)
-        $('#filters-grid-content')
+        const movies = $('#filters-grid-content')
             .find('.item')
-            .each((_, movieCard) => {
+            .get()
+            .map((movieCard) => {
                 const title = $(movieCard).find('.w--100').children().first().text()
                 const year = $(movieCard).find('.info').children('.info__item--year').text()
                 const image = $(movieCard).find('img').attr('src')
@@ -33,14 +37,13 @@ export class ParseService {
                     .get()
                     .map((genre) => $(genre).text())
 
-                movies.push({
+                return {
                     title: title,
                     year: year,
                     genres: genres,
                     image: `https://uaserial.club${image}`,
-                })
+                }
             })
-
         return JSON.stringify(movies)
     }
 }

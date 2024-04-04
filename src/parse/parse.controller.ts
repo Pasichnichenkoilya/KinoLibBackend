@@ -5,8 +5,8 @@ import { ParseService } from './parse.service'
 export class ParseController {
     constructor(private readonly parseService: ParseService) {}
 
-    @Get()
-    async fetchAndParseWikipediaContent(): Promise<string> {
+    @Get('/')
+    async fetchTabs(): Promise<string> {
         const html = await this.parseService.fetchContent()
         const parsedData = this.parseService.parseTabs(html)
         return parsedData
