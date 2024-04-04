@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
+import { Movie, Tab } from './types'
 
 @Injectable()
 export class ParseService {
@@ -13,16 +14,18 @@ export class ParseService {
         }
     }
 
-    parseTabs(html: string): string {
+    parseTabs(html: string): Tab[] {
         const $ = cheerio.load(html)
         const firstHeadingContent = $('.tabs__sorting').text()
         const trimmedContent = firstHeadingContent.replace(/\n/g, '').trim()
         const wordsArray = trimmedContent.split(/\s+/)
-        const jsonData = JSON.stringify(wordsArray)
-        return jsonData
+
+        return wordsArray.map((tabName) => ({
+            title: tabName,
+        }))
     }
 
-    parseMovies(html: string): string {
+    parseMovies(html: string): Movie[] {
         const $ = cheerio.load(html)
         const movies = $('#filters-grid-content')
             .find('.item')
@@ -44,6 +47,6 @@ export class ParseService {
                     image: `https://uaserial.club${image}`,
                 }
             })
-        return JSON.stringify(movies)
+        return movies
     }
 }
