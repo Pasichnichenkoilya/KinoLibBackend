@@ -1,8 +1,17 @@
-export type Movie = {
+export type Media = {
+    id: string
     title: string
-    year: string
-    genres: string[]
     image: string
+    year: number
+    rating: number
+    genres: string[]
+    type: string
+    lastEpisode: string
+}
+
+export type MediaResponse = {
+    media: Media[]
+    countOfPages: number
 }
 
 export type Tab = {
