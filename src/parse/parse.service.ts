@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import { Movie, Tab } from './types'
+import { Tab, Media, MediaResponse } from './types'
 
 @Injectable()
 export class ParseService {
@@ -19,34 +19,56 @@ export class ParseService {
         const firstHeadingContent = $('.tabs__sorting').text()
         const trimmedContent = firstHeadingContent.replace(/\n/g, '').trim()
         const wordsArray = trimmedContent.split(/\s+/)
-
-        return wordsArray.map((tabName) => ({
-            title: tabName,
+        return wordsArray.map((tab) => ({
+            title: tab,
         }))
     }
 
-    parseMovies(html: string): Movie[] {
+    parseMediaCards(html: string): Media[] {
         const $ = cheerio.load(html)
-        const movies = $('#filters-grid-content')
+        const media = $('#filters-grid-content')
             .find('.item')
             .get()
-            .map((movieCard) => {
-                const title = $(movieCard).find('.w--100').children().first().text()
-                const year = $(movieCard).find('.info').children('.info__item--year').text()
-                const image = $(movieCard).find('img').attr('src')
-                const genres = $(movieCard)
+            .map((mediaCard) => {
+                const id = $(mediaCard).children().first().attr('href')
+                const title = $(mediaCard).find('.w--100').children().first().text()
+                const image = $(mediaCard).find('img').attr('src')
+                const year = $(mediaCard).find('.info').children('.info__item--year').text()
+                const rating = $(mediaCard).find('.movie-mark').text()
+                const lastEpisode = $(mediaCard).find('.img-wrap').has('.last-episode').text().trim()
+                const genres = $(mediaCard)
                     .find('.info')
                     .children('.info__item--genre')
                     .get()
                     .map((genre) => $(genre).text())
 
                 return {
+                    id: id,
                     title: title,
-                    year: year,
-                    genres: genres,
                     image: `https://uaserial.club${image}`,
+                    year: parseInt(year),
+                    rating: parseFloat(rating),
+                    genres: genres,
+                    type: lastEpisode ? 'Series' : 'Movie',
+                    lastEpisode: lastEpisode,
                 }
             })
-        return movies
+        return media
+    }
+
+    parseCountOfPages(html: string): number {
+        const $ = cheerio.load(html)
+        const countOfPages = $('#filters-grid-content').find('.pagination').children('.page').last().text()
+        return parseInt(countOfPages)
+    }
+
+    async fetchMedia(url: string): Promise<MediaResponse> {
+        const html = await this.fetchContent(url)
+        const media = this.parseMediaCards(html)
+        const countOfPages = this.parseCountOfPages(html)
+        return {
+            media: media,
+            countOfPages: countOfPages,
+        }
     }
 }
