@@ -42,4 +42,9 @@ export class ParseController {
     async fetchAnime(@Param('page') page: string = '1'): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/anime/${page}`)
     }
+
+    @Get('/search/:name')
+    async fetchSearch(@Param('name') name: string = 'panda'): Promise<MediaResponse> {
+        return await this.parseService.fetchMedia(`https://uaserial.club/search?query=${name}`)
+    }
 }

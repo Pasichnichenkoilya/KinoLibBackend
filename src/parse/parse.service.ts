@@ -26,7 +26,7 @@ export class ParseService {
 
     parseMediaCards(html: string): Media[] {
         const $ = cheerio.load(html)
-        const media = $('#filters-grid-content')
+        const media = $('.col')
             .find('.item')
             .get()
             .map((mediaCard) => {
