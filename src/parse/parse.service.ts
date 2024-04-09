@@ -26,7 +26,7 @@ export class ParseService {
 
     parseMediaCards(html: string): Media[] {
         const $ = cheerio.load(html)
-        const media = $('#filters-grid-content')
+        const media = $('.col')
             .find('.item')
             .get()
             .map((mediaCard) => {
@@ -59,7 +59,7 @@ export class ParseService {
     parseCountOfPages(html: string): number {
         const $ = cheerio.load(html)
         const countOfPages = $('#filters-grid-content').find('.pagination').children('.page').last().text()
-        return parseInt(countOfPages)
+        return parseInt(countOfPages) || 1
     }
 
     async fetchMedia(url: string): Promise<MediaResponse> {
