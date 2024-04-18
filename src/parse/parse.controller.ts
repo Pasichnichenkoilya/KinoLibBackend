@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import { ParseService } from './parse.service'
-import { Tab, MediaResponse } from './types'
+import { Tab, MediaResponse, DetailsResponse } from './types'
 
 @Controller('parse')
 export class ParseController {
@@ -46,5 +46,14 @@ export class ParseController {
     @Get('/search/:name')
     async fetchSearch(@Param('name') name: string = 'panda'): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/search?query=${name}`)
+    }
+
+    @Get('/details/:name/:season?')
+    async fetchDetail(
+        @Param('name') name: string = 'movie-asterix-obelix-lempire-du-milieu',
+        @Param('season') season?: string
+    ): Promise<DetailsResponse> {
+        const url = season ? `https://uaserial.club/${name}/${season}` : `https://uaserial.club/${name}`;
+        return await this.parseService.fetchDetails(url);
     }
 }

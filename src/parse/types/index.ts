@@ -17,3 +17,20 @@ export type MediaResponse = {
 export type Tab = {
     title: string
 }
+
+export type Details = {
+    film_path: string[];
+    title_ua: string;
+    title_original: string;
+    description: string;
+    image: string;
+    rating: string;
+    country: string;
+    time: string;
+    release: string;
+    genres: string[];
+}
+
+export type DetailsResponse = {
+    media: Details[]
+}
