@@ -54,7 +54,9 @@ export class ParseController {
         @Param('season') season?: string
     ): Promise<PlayerDataResponse> {
         const playerDataResponse = await this.parseService.parsePlayerUrl(
-            `https://uaserial.club/${mediaId}/${season || ''}`
+            `https://uaserial.club/${mediaId}/${season || ''}`,
+            mediaId,
+            season || ''
         )
         return playerDataResponse
     }

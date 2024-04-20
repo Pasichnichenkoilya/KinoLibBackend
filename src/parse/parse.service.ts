@@ -88,39 +88,59 @@ export class ParseService {
         return cleanFileUrl
     }
 
-    async parsePlayerUrl(url: string): Promise<PlayerDataResponse> {
-        const html = await this.fetchContent(url)
-        let $ = cheerio.load(html)
-        let fileUrl = ''
+    parseEpisode(scriptStr: string): string {
+        const start = scriptStr.indexOf(`"episodeNumber":`)
+        const end = scriptStr.indexOf(`",`)
+        const episode = scriptStr.substring(start).split(',')[0].replace(`"episodeNumber": `, '').replaceAll(`"`, '')
+        return `episode-${episode}`
+    }
 
-        const mediaName = url
-            .replace('https://uaserial.club/', '')
-            .replace('movie-', '')
-            .replace('season-1', '')
-            .replace('episode-1', '')
-            .split('/')[0]
-        const embedUrl = `https://uaserial.club/embed/${mediaName}/season-1/episode-1`
+    getEpisode(scriptStr: string): string {
+        const defaultEpisode = 'episode-1'
+        const isMovie = scriptStr.indexOf(`"@type": "Movie"`) != -1
+        return isMovie ? defaultEpisode : this.parseEpisode(scriptStr)
+    }
 
-        const embedHTML = await this.fetchContent(embedUrl)
-        $ = cheerio.load(embedHTML)
-        const playerUrl = $('option').attr('value')
+    async parsePlayerUrl(url: string, id: string, season: string): Promise<PlayerDataResponse> {
+        try {
+            const html = await this.fetchContent(url)
+            let $ = cheerio.load(html)
 
-        const playerHTML = await this.fetchContent(playerUrl)
-        $ = cheerio.load(playerHTML)
+            const idParam = id.replace('movie-', '')
+            const seasonParam = season.startsWith('season-')
+                ? `${season.split('-')[0]}-${season.split('-')[1]}`
+                : 'season-1'
+            const episodeParam = this.getEpisode($('script').html().trim().replaceAll('\n', '').replaceAll('\t', ''))
+            const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
 
-        if (playerUrl.startsWith('https://ashdi')) {
-            const scriptText = $('script').last().html().trim().replaceAll('\n', '').replaceAll('\t', '')
-            fileUrl = await this.getFileUrlForAshdiPlayer(scriptText)
-        }
+            const embedHTML = await this.fetchContent(embedUrl)
+            $ = cheerio.load(embedHTML)
+            const playerUrl = $('option').attr('value')
+            const playerHTML = await this.fetchContent(playerUrl)
+            $ = cheerio.load(playerHTML)
 
-        if (playerUrl.startsWith('https://boogiemovie')) {
-            const scriptText = $('script').first().html().trim().replaceAll('\n', '').replaceAll('\t', '')
-            fileUrl = await this.getFileUrlForBoogiemoviePlayer(scriptText)
-        }
+            if (playerUrl.startsWith('https://ashdi')) {
+                const scriptText = $('script').last().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+                const fileUrl = await this.getFileUrlForAshdiPlayer(scriptText)
+                return {
+                    playerUrl: playerUrl,
+                    fileUrl: fileUrl,
+                }
+            }
 
-        return {
-            playerUrl: playerUrl,
-            fileUrl: fileUrl,
+            if (playerUrl.startsWith('https://boogiemovie')) {
+                const scriptText = $('script').first().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+                const fileUrl = await this.getFileUrlForBoogiemoviePlayer(scriptText)
+                return {
+                    playerUrl: playerUrl,
+                    fileUrl: fileUrl,
+                }
+            }
+        } catch (error) {
+            return {
+                playerUrl: null,
+                fileUrl: null,
+            }
         }
     }
 }
