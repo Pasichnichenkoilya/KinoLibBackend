@@ -17,3 +17,8 @@ export type MediaResponse = {
 export type Tab = {
     title: string
 }
+
+export type PlayerDataResponse = {
+    playerUrl: string
+    fileUrl: string
+}
