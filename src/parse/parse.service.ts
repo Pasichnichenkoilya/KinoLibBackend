@@ -73,17 +73,25 @@ export class ParseService {
         }
     }
 
-    getFileSubstring(str: string): string {
-        const start = str.indexOf('var player = new Playerjs({')
-        const end = str.indexOf('poster:')
-        const dirtyFileUrl = str.substring(start, end).split(',')[1] // 1: skipping 'var player = new Playerjs({'
+    async getFileUrlForAshdiPlayer(scriptStr: string): Promise<string> {
+        const start = scriptStr.indexOf('var player = new Playerjs({')
+        const end = scriptStr.indexOf('poster:')
+        const dirtyFileUrl = scriptStr.substring(start, end).split(',')[1] // 1: skipping 'var player = new Playerjs({'
         const cleanFileUrl = dirtyFileUrl.replaceAll('""', '').replaceAll(`\"`, '').replaceAll('file:', '')
+        return cleanFileUrl
+    }
+
+    async getFileUrlForBoogiemoviePlayer(scriptStr: string): Promise<string> {
+        const start = scriptStr.indexOf("manifest: '")
+        const end = scriptStr.indexOf("',")
+        const cleanFileUrl = scriptStr.substring(start, end).replace("manifest: '", '')
         return cleanFileUrl
     }
 
     async parsePlayerUrl(url: string): Promise<PlayerDataResponse> {
         const html = await this.fetchContent(url)
         let $ = cheerio.load(html)
+        let fileUrl = ''
 
         const mediaName = url
             .replace('https://uaserial.club/', '')
@@ -99,8 +107,16 @@ export class ParseService {
 
         const playerHTML = await this.fetchContent(playerUrl)
         $ = cheerio.load(playerHTML)
-        const scriptText = $('script').last().html().trim().replaceAll('\n', '').replaceAll('\t', '')
-        const fileUrl = this.getFileSubstring(scriptText)
+
+        if (playerUrl.startsWith('https://ashdi')) {
+            const scriptText = $('script').last().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+            fileUrl = await this.getFileUrlForAshdiPlayer(scriptText)
+        }
+
+        if (playerUrl.startsWith('https://boogiemovie')) {
+            const scriptText = $('script').first().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+            fileUrl = await this.getFileUrlForBoogiemoviePlayer(scriptText)
+        }
 
         return {
             playerUrl: playerUrl,
