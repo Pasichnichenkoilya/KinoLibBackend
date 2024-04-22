@@ -73,6 +73,30 @@ export class ParseService {
         }
     }
 
+    async fetchFilteredMedia(
+        mediaType: string,
+        priority: string,
+        rating: string,
+        genre: string,
+        date: string
+    ): Promise<MediaResponse> {
+        const priorityParam = priority ? `&priority=${priority}` : ''
+        const ratingParam = rating ? `&rating=${rating}` : ''
+        const genreParam = genre ? `&genre=${genre}` : ''
+        const dateParam = date ? `&date=${date}` : ''
+        const mediaTypes = {
+            all: '',
+            movies: 'movie',
+            series: 'serial',
+            cartoons: 'cartoon-movie',
+            'cartoon-series': 'cartoon-series',
+            anime: 'anime',
+        }
+
+        const url = `https://uaserial.club/${mediaType ? mediaTypes[mediaType] : ''}?${priorityParam}${ratingParam}${genreParam}${dateParam}`
+        return await this.fetchMedia(url.replace('/?&', '/?'))
+    }
+
     async getFileUrlForAshdiPlayer(scriptStr: string): Promise<string> {
         const start = scriptStr.indexOf('var player = new Playerjs({')
         const end = scriptStr.indexOf('poster:')

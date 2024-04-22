@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Param, Query } from '@nestjs/common'
 import { ParseService } from './parse.service'
 import { Tab, MediaResponse, PlayerDataResponse } from './types'
 
@@ -46,6 +46,17 @@ export class ParseController {
     @Get('/search/:name')
     async fetchSearch(@Param('name') name: string = 'panda'): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/search?query=${name}`)
+    }
+
+    @Get('/filter')
+    async fetchFiltered(
+        @Query('mediaType') mediaType: string,
+        @Query('priority') priority: string,
+        @Query('rating') rating: string,
+        @Query('genre') genre: string,
+        @Query('date') date: string
+    ): Promise<MediaResponse> {
+        return await this.parseService.fetchFilteredMedia(mediaType, priority, rating, genre, date)
     }
 
     @Get('/player/:mediaId/:season?')
