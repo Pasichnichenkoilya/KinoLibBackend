@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import { Tab, Media, MediaResponse } from './types'
+import { Tab, Media, MediaResponse, PlayerDataResponse } from './types'
 
 @Injectable()
 export class ParseService {
@@ -95,5 +95,76 @@ export class ParseService {
 
         const url = `https://uaserial.club/${mediaType ? mediaTypes[mediaType] : ''}?${priorityParam}${ratingParam}${genreParam}${dateParam}`
         return await this.fetchMedia(url.replace('/?&', '/?'))
+    }
+
+    async getFileUrlForAshdiPlayer(scriptStr: string): Promise<string> {
+        const start = scriptStr.indexOf('var player = new Playerjs({')
+        const end = scriptStr.indexOf('poster:')
+        const dirtyFileUrl = scriptStr.substring(start, end).split(',')[1] // 1: skipping 'var player = new Playerjs({'
+        const cleanFileUrl = dirtyFileUrl.replaceAll('""', '').replaceAll(`\"`, '').replaceAll('file:', '')
+        return cleanFileUrl
+    }
+
+    async getFileUrlForBoogiemoviePlayer(scriptStr: string): Promise<string> {
+        const start = scriptStr.indexOf("manifest: '")
+        const end = scriptStr.indexOf("',")
+        const cleanFileUrl = scriptStr.substring(start, end).replace("manifest: '", '')
+        return cleanFileUrl
+    }
+
+    parseEpisode(scriptStr: string): string {
+        const start = scriptStr.indexOf(`"episodeNumber":`)
+        const end = scriptStr.indexOf(`",`)
+        const episode = scriptStr.substring(start).split(',')[0].replace(`"episodeNumber": `, '').replaceAll(`"`, '')
+        return `episode-${episode}`
+    }
+
+    getEpisode(scriptStr: string): string {
+        const defaultEpisode = 'episode-1'
+        const isMovie = scriptStr.indexOf(`"@type": "Movie"`) != -1
+        return isMovie ? defaultEpisode : this.parseEpisode(scriptStr)
+    }
+
+    async parsePlayerUrl(url: string, id: string, season: string): Promise<PlayerDataResponse> {
+        try {
+            const html = await this.fetchContent(url)
+            let $ = cheerio.load(html)
+
+            const idParam = id.replace('movie-', '')
+            const seasonParam = season.startsWith('season-')
+                ? `${season.split('-')[0]}-${season.split('-')[1]}`
+                : 'season-1'
+            const episodeParam = this.getEpisode($('script').html().trim().replaceAll('\n', '').replaceAll('\t', ''))
+            const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
+
+            const embedHTML = await this.fetchContent(embedUrl)
+            $ = cheerio.load(embedHTML)
+            const playerUrl = $('option').attr('value')
+            const playerHTML = await this.fetchContent(playerUrl)
+            $ = cheerio.load(playerHTML)
+
+            if (playerUrl.startsWith('https://ashdi')) {
+                const scriptText = $('script').last().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+                const fileUrl = await this.getFileUrlForAshdiPlayer(scriptText)
+                return {
+                    playerUrl: playerUrl,
+                    fileUrl: fileUrl,
+                }
+            }
+
+            if (playerUrl.startsWith('https://boogiemovie')) {
+                const scriptText = $('script').first().html().trim().replaceAll('\n', '').replaceAll('\t', '')
+                const fileUrl = await this.getFileUrlForBoogiemoviePlayer(scriptText)
+                return {
+                    playerUrl: playerUrl,
+                    fileUrl: fileUrl,
+                }
+            }
+        } catch (error) {
+            return {
+                playerUrl: null,
+                fileUrl: null,
+            }
+        }
     }
 }
