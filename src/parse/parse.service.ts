@@ -184,16 +184,16 @@ export class ParseService {
         const start = scriptStr.indexOf(`"episodeNumber":`)
         const end = scriptStr.indexOf(`",`)
         const episode = scriptStr.substring(start).split(',')[0].replace(`"episodeNumber": `, '').replaceAll(`"`, '')
-        return episode
+        return `episode-${episode}`
     }
 
     getEpisode(scriptStr: string): string {
-        const defaultEpisode = '1'
+        const defaultEpisode = 'episode-1'
         const isMovie = scriptStr.indexOf(`"@type": "Movie"`) != -1
         return isMovie ? defaultEpisode : this.parseEpisode(scriptStr)
     }
 
-    async parsePlayerUrl(url: string, id: string, season: string, episode: string): Promise<PlayerDataResponse> {
+    async parsePlayer(url: string, id: string, season: string, episode: string): Promise<PlayerDataResponse> {
         try {
             const html = await this.fetchContent(url)
             let $ = cheerio.load(html)
@@ -205,7 +205,7 @@ export class ParseService {
 
             const episodeParam =
                 episode || this.getEpisode($('script').html().trim().replaceAll('\n', '').replaceAll('\t', ''))
-            const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/episode-${episodeParam}`
+            const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
 
             const embedHTML = await this.fetchContent(embedUrl)
             $ = cheerio.load(embedHTML)
@@ -236,5 +236,16 @@ export class ParseService {
                 fileUrl: null,
             }
         }
+    }
+
+    parsePlayerUrl(id: string, season: string, episode: string): string {
+        const idParam = id.replace('movie-', '')
+        const seasonParam = season.startsWith('season-')
+            ? `${season.split('-')[0]}-${season.split('-')[1]}`
+            : 'season-1'
+        const episodeParam = episode || 'episode-1'
+        const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
+
+        return embedUrl
     }
 }

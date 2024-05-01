@@ -69,17 +69,27 @@ export class ParseController {
     }
 
     @Get('/player/:mediaId/:season?/:episode?/')
-    async fetchPlayerUrl(
+    async fetchPlayer(
         @Param('mediaId') mediaId: string,
         @Param('season') season?: string,
         @Param('episode') episode?: string
     ): Promise<PlayerDataResponse> {
-        const playerDataResponse = await this.parseService.parsePlayerUrl(
+        const playerDataResponse = await this.parseService.parsePlayer(
             `https://uaserial.club/${mediaId}/${season || ''}`,
             mediaId,
             season || '',
-            episode
+            episode || ''
         )
+        return playerDataResponse
+    }
+
+    @Get('/player-url/:mediaId/:season?/:episode?/')
+    fetchPlayerUrl(
+        @Param('mediaId') mediaId: string,
+        @Param('season') season?: string,
+        @Param('episode') episode?: string
+    ): string {
+        const playerDataResponse = this.parseService.parsePlayerUrl(mediaId, season || '', episode || '')
         return playerDataResponse
     }
 }
