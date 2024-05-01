@@ -38,3 +38,9 @@ export type PlayerDataResponse = {
     playerUrl: string
     fileUrl: string
 }
+
+export type SeasonInfo = {
+    seasonId: string
+    seasonNumber: string
+    episodes: string[]
+}

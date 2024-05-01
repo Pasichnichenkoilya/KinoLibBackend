@@ -14,37 +14,37 @@ export class ParseController {
     }
 
     @Get('/all/:page')
-    async fetchAll(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchAll(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/${page}`)
     }
 
     @Get('/movies/:page')
-    async fetchMovies(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchMovies(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/movie/${page}`)
     }
 
     @Get('/series/:page')
-    async fetchSeries(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchSeries(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/serial/${page}`)
     }
 
     @Get('/cartoons/:page')
-    async fetchCartoons(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchCartoons(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/cartoon-movie/${page}`)
     }
 
     @Get('/cartoon-series/:page')
-    async fetchCartoonSeries(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchCartoonSeries(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/cartoon-series/${page}`)
     }
 
     @Get('/anime/:page')
-    async fetchAnime(@Param('page') page: string = '1'): Promise<MediaResponse> {
+    async fetchAnime(@Param('page') page: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/anime/${page}`)
     }
 
     @Get('/search/:name')
-    async fetchSearch(@Param('name') name: string = 'panda'): Promise<MediaResponse> {
+    async fetchSearch(@Param('name') name: string): Promise<MediaResponse> {
         return await this.parseService.fetchMedia(`https://uaserial.club/search?query=${name}`)
     }
 
@@ -56,6 +56,7 @@ export class ParseController {
         const url = season ? `https://uaserial.club/${name}/${season}` : `https://uaserial.club/${name}`
         return await this.parseService.fetchDetails(url)
     }
+
     @Get('/filter')
     async fetchFiltered(
         @Query('mediaType') mediaType: string,
@@ -67,16 +68,28 @@ export class ParseController {
         return await this.parseService.fetchFilteredMedia(mediaType, priority, rating, genre, date)
     }
 
-    @Get('/player/:mediaId/:season?')
-    async fetchPlayerUrl(
+    @Get('/player/:mediaId/:season?/:episode?/')
+    async fetchPlayer(
         @Param('mediaId') mediaId: string,
-        @Param('season') season?: string
+        @Param('season') season?: string,
+        @Param('episode') episode?: string
     ): Promise<PlayerDataResponse> {
-        const playerDataResponse = await this.parseService.parsePlayerUrl(
+        const playerDataResponse = await this.parseService.parsePlayer(
             `https://uaserial.club/${mediaId}/${season || ''}`,
             mediaId,
-            season || ''
+            season || '',
+            episode || ''
         )
+        return playerDataResponse
+    }
+
+    @Get('/player-url/:mediaId/:season?/:episode?/')
+    fetchPlayerUrl(
+        @Param('mediaId') mediaId: string,
+        @Param('season') season?: string,
+        @Param('episode') episode?: string
+    ): string {
+        const playerDataResponse = this.parseService.parsePlayerUrl(mediaId, season || '', episode || '')
         return playerDataResponse
     }
 }

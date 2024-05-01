@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import { Tab, Media, MediaResponse, Details, DetailsResponse, PlayerDataResponse } from './types'
+import { Tab, Media, MediaResponse, Details, DetailsResponse, PlayerDataResponse, SeasonInfo } from './types'
 
 @Injectable()
 export class ParseService {
@@ -73,6 +73,22 @@ export class ParseService {
         }
     }
 
+    parseSeasons(html: string): SeasonInfo[] {
+        const $ = cheerio.load(html)
+        const scriptText = $('script').html().trim().replaceAll('\n', '').replaceAll('\t', '').replaceAll('@', '')
+        const json = JSON.parse(scriptText)
+
+        if (json.type == 'Movie') return []
+
+        return json.partOfTVSeries.containsSeason.map((season) => {
+            return {
+                seasonId: season.url.replace('https://uaserial.club', ''),
+                seasonNumber: season.seasonNumber,
+                episodes: season.episode.map((episode) => episode.episodeNumber),
+            }
+        })
+    }
+
     parseDetails(html: string): Details[] {
         const $ = cheerio.load(html)
         const parent = $('.flex.column.fg1').first().parent()
@@ -110,6 +126,7 @@ export class ParseService {
                 time: extractedTime,
                 release: release,
                 genres: genres,
+                seasonsInfo: this.parseSeasons(html),
             }
         })
         return media
@@ -123,6 +140,7 @@ export class ParseService {
             media: media,
         }
     }
+
     async fetchFilteredMedia(
         mediaType: string,
         priority: string,
@@ -175,7 +193,7 @@ export class ParseService {
         return isMovie ? defaultEpisode : this.parseEpisode(scriptStr)
     }
 
-    async parsePlayerUrl(url: string, id: string, season: string): Promise<PlayerDataResponse> {
+    async parsePlayer(url: string, id: string, season: string, episode: string): Promise<PlayerDataResponse> {
         try {
             const html = await this.fetchContent(url)
             let $ = cheerio.load(html)
@@ -184,7 +202,9 @@ export class ParseService {
             const seasonParam = season.startsWith('season-')
                 ? `${season.split('-')[0]}-${season.split('-')[1]}`
                 : 'season-1'
-            const episodeParam = this.getEpisode($('script').html().trim().replaceAll('\n', '').replaceAll('\t', ''))
+
+            const episodeParam =
+                episode || this.getEpisode($('script').html().trim().replaceAll('\n', '').replaceAll('\t', ''))
             const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
 
             const embedHTML = await this.fetchContent(embedUrl)
@@ -216,5 +236,16 @@ export class ParseService {
                 fileUrl: null,
             }
         }
+    }
+
+    parsePlayerUrl(id: string, season: string, episode: string): string {
+        const idParam = id.replace('movie-', '')
+        const seasonParam = season.startsWith('season-')
+            ? `${season.split('-')[0]}-${season.split('-')[1]}`
+            : 'season-1'
+        const episodeParam = episode || 'episode-1'
+        const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
+
+        return embedUrl
     }
 }
