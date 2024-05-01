@@ -238,7 +238,7 @@ export class ParseService {
         }
     }
 
-    parsePlayerUrl(id: string, season: string, episode: string): string {
+    parsePlayerUrl(id: string, season: string, episode: string): PlayerDataResponse {
         const idParam = id.replace('movie-', '')
         const seasonParam = season.startsWith('season-')
             ? `${season.split('-')[0]}-${season.split('-')[1]}`
@@ -246,6 +246,9 @@ export class ParseService {
         const episodeParam = episode || 'episode-1'
         const embedUrl = `https://uaserial.club/embed/${idParam}/${seasonParam}/${episodeParam}`
 
-        return embedUrl
+        return {
+            playerUrl: embedUrl,
+            fileUrl: null,
+        }
     }
 }

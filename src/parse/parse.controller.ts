@@ -88,7 +88,7 @@ export class ParseController {
         @Param('mediaId') mediaId: string,
         @Param('season') season?: string,
         @Param('episode') episode?: string
-    ): string {
+    ): PlayerDataResponse {
         const playerDataResponse = this.parseService.parsePlayerUrl(mediaId, season || '', episode || '')
         return playerDataResponse
     }
