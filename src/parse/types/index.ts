@@ -32,10 +32,6 @@ export type Details = {
     seasonsInfo: SeasonInfo[]
 }
 
-export type DetailsResponse = {
-    media: Details[]
-}
-
 export type PlayerDataResponse = {
     playerUrl: string
     fileUrl: string

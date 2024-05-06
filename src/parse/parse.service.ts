@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import { Tab, Media, MediaResponse, Details, DetailsResponse, PlayerDataResponse, SeasonInfo } from './types'
+import { Tab, Media, MediaResponse, Details, PlayerDataResponse, SeasonInfo } from './types'
 
 @Injectable()
 export class ParseService {
@@ -89,11 +89,11 @@ export class ParseService {
         })
     }
 
-    parseDetails(html: string): Details[] {
+    parseDetails(html: string): Details {
         const $ = cheerio.load(html)
         const parent = $('.flex.column.fg1').first().parent()
 
-        const media = parent.get().map((mediaCard) => {
+        const details = parent.get().map((mediaCard) => {
             const filmPath = $(mediaCard)
                 .find('ol.block__breadcrumbs li span[itemprop="name"]')
                 .map((_, element) => $(element).text().trim())
@@ -127,17 +127,15 @@ export class ParseService {
                 genres: genres,
                 seasonsInfo: this.parseSeasons(html),
             }
-        })
-        return media
+        })[0]
+        return details
     }
 
-    async fetchDetails(url: string): Promise<DetailsResponse> {
+    async fetchDetails(url: string): Promise<Details> {
         const html = await this.fetchContent(url)
-        const media = this.parseDetails(html)
+        const details = this.parseDetails(html)
 
-        return {
-            media: media,
-        }
+        return details
     }
 
     async fetchFilteredMedia(
