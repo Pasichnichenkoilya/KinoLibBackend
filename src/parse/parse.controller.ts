@@ -49,10 +49,7 @@ export class ParseController {
     }
 
     @Get('/details/:name/:season?')
-    async fetchDetail(
-        @Param('name') name: string = 'movie-asterix-obelix-lempire-du-milieu',
-        @Param('season') season?: string
-    ): Promise<DetailsResponse> {
+    async fetchDetail(@Param('name') name: string, @Param('season') season?: string): Promise<DetailsResponse> {
         const url = season ? `https://uaserial.club/${name}/${season}` : `https://uaserial.club/${name}`
         return await this.parseService.fetchDetails(url)
     }

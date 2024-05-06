@@ -19,9 +19,9 @@ export type Tab = {
 }
 
 export type Details = {
-    film_path: string[]
-    title_ua: string
-    title_original: string
+    filmPath: string[]
+    titleUa: string
+    titleOriginal: string
     description: string
     image: string
     rating: string
@@ -29,6 +29,7 @@ export type Details = {
     time: string
     release: string
     genres: string[]
+    seasonsInfo: SeasonInfo[]
 }
 
 export type DetailsResponse = {
