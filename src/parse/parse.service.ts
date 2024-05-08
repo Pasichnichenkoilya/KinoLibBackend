@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import { Tab, Media, MediaResponse, Details, DetailsResponse, PlayerDataResponse, SeasonInfo } from './types'
+import { Tab, Media, MediaResponse, Details, PlayerDataResponse, SeasonInfo } from './types'
 
 @Injectable()
 export class ParseService {
@@ -89,17 +89,17 @@ export class ParseService {
         })
     }
 
-    parseDetails(html: string): Details[] {
+    parseDetails(html: string): Details {
         const $ = cheerio.load(html)
         const parent = $('.flex.column.fg1').first().parent()
 
-        const media = parent.get().map((mediaCard) => {
-            const film_path = $(mediaCard)
+        const details = parent.get().map((mediaCard) => {
+            const filmPath = $(mediaCard)
                 .find('ol.block__breadcrumbs li span[itemprop="name"]')
-                .map((index, element) => $(element).text().trim())
+                .map((_, element) => $(element).text().trim())
                 .get()
-            const title_ua = $(mediaCard).find('.title').text()
-            const title_original = $(mediaCard).find('.original').text()
+            const titleUa = $(mediaCard).find('.title').text()
+            const titleOriginal = $(mediaCard).find('.original').text()
             const description = $(mediaCard).find('.text').text().replace(/\s+/g, ' ')
             const image = $(mediaCard).find('img').attr('src')
             const rating = $(mediaCard).find('.selection__badge--imdb div').eq(1).text().trim()
@@ -108,17 +108,16 @@ export class ParseService {
             const release = $(mediaCard).find('.movie-data-item--date .value').text().trim().replace(/\s+/g, ' ')
             const genres = $(mediaCard)
                 .find('.movie__genres__container .selection__badge:not(.selection__badge--imdb)')
-                .map((index, element) => $(element).text().trim())
+                .map((_, element) => $(element).text().trim())
                 .get()
-
             const timeRegex = /(\d+ год \d+ хв)|(\d+ хв)/
             const match = time.match(timeRegex)
             const extractedTime = match ? match[0] : ''
 
             return {
-                film_path: film_path,
-                title_ua: title_ua,
-                title_original: title_original,
+                filmPath: filmPath,
+                titleUa: titleUa,
+                titleOriginal: titleOriginal,
                 description: description,
                 image: `https://uaserial.club${image}`,
                 rating: rating,
@@ -128,17 +127,15 @@ export class ParseService {
                 genres: genres,
                 seasonsInfo: this.parseSeasons(html),
             }
-        })
-        return media
+        })[0]
+        return details
     }
 
-    async fetchDetails(url: string): Promise<DetailsResponse> {
+    async fetchDetails(url: string): Promise<Details> {
         const html = await this.fetchContent(url)
-        const media = this.parseDetails(html)
+        const details = this.parseDetails(html)
 
-        return {
-            media: media,
-        }
+        return details
     }
 
     async fetchFilteredMedia(
@@ -182,7 +179,6 @@ export class ParseService {
 
     parseEpisode(scriptStr: string): string {
         const start = scriptStr.indexOf(`"episodeNumber":`)
-        const end = scriptStr.indexOf(`",`)
         const episode = scriptStr.substring(start).split(',')[0].replace(`"episodeNumber": `, '').replaceAll(`"`, '')
         return `episode-${episode}`
     }
