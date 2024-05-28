@@ -2,9 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { Tab, Media, MediaResponse, Details, PlayerDataResponse, SeasonInfo } from './types'
+import { PrismaService } from 'src/prisma.service'
 
 @Injectable()
 export class ParseService {
+    constructor(private prisma: PrismaService) {}
+
     async fetchContent(url: string = 'https://uaserial.club/'): Promise<string> {
         try {
             const response = await axios.get(url)
@@ -131,9 +134,40 @@ export class ParseService {
         return details
     }
 
+    async addDetails(url: string, details: Details) {
+        await this.prisma.details.create({
+            data: {
+                id: url,
+                ...details,
+                seasonsInfo: {
+                    create: details.seasonsInfo.map((seasonInfo) => ({
+                        id: seasonInfo.seasonId,
+                        ...seasonInfo,
+                    })),
+                },
+            },
+        })
+    }
+
     async fetchDetails(url: string): Promise<Details> {
+        const cachedDetails = await this.prisma.details.findMany({
+            where: {
+                id: url,
+            },
+            include: {
+                seasonsInfo: true,
+            },
+        })
+
+        if (cachedDetails.length > 0) {
+            return {
+                ...cachedDetails[0],
+            }
+        }
+
         const html = await this.fetchContent(url)
         const details = this.parseDetails(html)
+        await this.addDetails(url, details)
 
         return details
     }
