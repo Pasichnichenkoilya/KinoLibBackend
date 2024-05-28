@@ -150,26 +150,30 @@ export class ParseService {
     }
 
     async fetchDetails(url: string): Promise<Details> {
-        const cachedDetails = await this.prisma.details.findMany({
-            where: {
-                id: url,
-            },
-            include: {
-                seasonsInfo: true,
-            },
-        })
+        try {
+            const cachedDetails = await this.prisma.details.findMany({
+                where: {
+                    id: url,
+                },
+                include: {
+                    seasonsInfo: true,
+                },
+            })
 
-        if (cachedDetails.length > 0) {
-            return {
-                ...cachedDetails[0],
+            if (cachedDetails.length > 0) {
+                return {
+                    ...cachedDetails[0],
+                }
             }
+
+            const html = await this.fetchContent(url)
+            const details = this.parseDetails(html)
+            await this.addDetails(url, details)
+
+            return details
+        } catch (error) {
+            console.log(error)
         }
-
-        const html = await this.fetchContent(url)
-        const details = this.parseDetails(html)
-        await this.addDetails(url, details)
-
-        return details
     }
 
     async fetchFilteredMedia(
