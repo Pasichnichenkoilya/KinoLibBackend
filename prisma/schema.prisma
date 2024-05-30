@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://kinolibadmin:libROOT123456789@kinolib-server.postgres.database.azure.com:5432/kinolibdb?shema=public"
+  url      = env("DATABASE_URL")
 }
 
 model Details {
