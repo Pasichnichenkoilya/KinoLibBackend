@@ -137,12 +137,14 @@ export class ParseService {
     async addDetails(url: string, details: Details) {
         await this.prisma.details.create({
             data: {
-                id: url,
+                detailsUrl: url,
                 ...details,
                 seasonsInfo: {
                     create: details.seasonsInfo.map((seasonInfo) => ({
-                        id: seasonInfo.seasonId,
-                        ...seasonInfo,
+                        seasonInfoUrl: seasonInfo.seasonId,
+                        seasonNumber: seasonInfo.seasonNumber,
+                        episodes: seasonInfo.episodes,
+                        seasonId: seasonInfo.seasonId,
                     })),
                 },
             },
@@ -153,7 +155,7 @@ export class ParseService {
         try {
             const cachedDetails = await this.prisma.details.findMany({
                 where: {
-                    id: url,
+                    detailsUrl: url,
                 },
                 include: {
                     seasonsInfo: true,
@@ -172,7 +174,10 @@ export class ParseService {
 
             return details
         } catch (error) {
-            console.log(error)
+            console.log(`Error occured: ${url}\n`, error)
+            const html = await this.fetchContent(url)
+            const details = this.parseDetails(html)
+            return details
         }
     }
 
