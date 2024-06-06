@@ -137,12 +137,14 @@ export class ParseService {
     async addDetails(url: string, details: Details) {
         await this.prisma.details.create({
             data: {
-                id: url,
+                detailsUrl: url,
                 ...details,
                 seasonsInfo: {
                     create: details.seasonsInfo.map((seasonInfo) => ({
-                        id: seasonInfo.seasonId,
-                        ...seasonInfo,
+                        seasonInfoUrl: seasonInfo.seasonId,
+                        seasonNumber: seasonInfo.seasonNumber,
+                        episodes: seasonInfo.episodes,
+                        seasonId: seasonInfo.seasonId,
                     })),
                 },
             },
@@ -150,26 +152,33 @@ export class ParseService {
     }
 
     async fetchDetails(url: string): Promise<Details> {
-        const cachedDetails = await this.prisma.details.findMany({
-            where: {
-                id: url,
-            },
-            include: {
-                seasonsInfo: true,
-            },
-        })
+        try {
+            const cachedDetails = await this.prisma.details.findMany({
+                where: {
+                    detailsUrl: url,
+                },
+                include: {
+                    seasonsInfo: true,
+                },
+            })
 
-        if (cachedDetails.length > 0) {
-            return {
-                ...cachedDetails[0],
+            if (cachedDetails.length > 0) {
+                return {
+                    ...cachedDetails[0],
+                }
             }
+
+            const html = await this.fetchContent(url)
+            const details = this.parseDetails(html)
+            await this.addDetails(url, details)
+
+            return details
+        } catch (error) {
+            console.log(`Error occured: ${url}\n`, error)
+            const html = await this.fetchContent(url)
+            const details = this.parseDetails(html)
+            return details
         }
-
-        const html = await this.fetchContent(url)
-        const details = this.parseDetails(html)
-        await this.addDetails(url, details)
-
-        return details
     }
 
     async fetchFilteredMedia(

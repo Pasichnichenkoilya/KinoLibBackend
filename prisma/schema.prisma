@@ -8,7 +8,8 @@ datasource db {
 }
 
 model Details {
-  id            String       @id()
+  id            String       @id() @default(uuid())
+  detailsUrl    String
   filmPath      String[]
   titleUa       String
   titleOriginal String
@@ -23,10 +24,11 @@ model Details {
 }
 
 model SeasonInfo {
-  id           String   @id()
-  seasonId     String
-  seasonNumber String
-  episodes     String[]
-  Details      Details? @relation(fields: [detailsId], references: [id])
-  detailsId    String?
+  id            String   @id() @default(uuid())
+  seasonInfoUrl String
+  seasonId      String
+  seasonNumber  String
+  episodes      String[]
+  Details       Details? @relation(fields: [detailsId], references: [id])
+  detailsId     String?
 }
